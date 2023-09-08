@@ -9,21 +9,8 @@ import tensorflow as tf
 
 class DeepSpeech():
     def __init__(self,model_path):
-        self.graph, self.logits_ph, self.input_node_ph, self.input_lengths_ph \
-            = self._prepare_deepspeech_net(model_path)
+        self.model = tf.saved_model.load(model_path)
         self.target_sample_rate = 16000
-
-    def _prepare_deepspeech_net(self,deepspeech_pb_path):
-        with tf.io.gfile.GFile(deepspeech_pb_path, "rb") as f:
-            graph_def = tf.compat.v1.GraphDef()
-            graph_def.ParseFromString(f.read())
-        graph = tf.compat.v1.get_default_graph()
-        tf.import_graph_def(graph_def, name="deepspeech")
-        logits_ph = graph.get_tensor_by_name("deepspeech/logits:0")
-        input_node_ph = graph.get_tensor_by_name("deepspeech/input_node:0")
-        input_lengths_ph = graph.get_tensor_by_name("deepspeech/input_lengths:0")
-
-        return graph, logits_ph, input_node_ph, input_lengths_ph
 
     def conv_audio_to_deepspeech_input_vector(self,audio,
                                               sample_rate,
@@ -77,18 +64,19 @@ class DeepSpeech():
                 sr_new=self.target_sample_rate)
         else:
             resampled_audio = audio.astype(np.float)
-        with tf.compat.v1.Session(graph=self.graph) as sess:
-            input_vector = self.conv_audio_to_deepspeech_input_vector(
-                audio=resampled_audio.astype(np.int16),
-                sample_rate=self.target_sample_rate,
-                num_cepstrum=26,
-                num_context=9)
-            network_output = sess.run(
-                    self.logits_ph,
-                    feed_dict={
-                        self.input_node_ph: input_vector[np.newaxis, ...],
-                        self.input_lengths_ph: [input_vector.shape[0]]})
-            ds_features = network_output[::2,0,:]
+
+        input_vector_np = self.conv_audio_to_deepspeech_input_vector(
+            audio=resampled_audio.astype(np.int16),
+            sample_rate=self.target_sample_rate,
+            num_cepstrum=26,
+            num_context=9)
+
+        input_vector = tf.constant(input_vector_np)[None]
+        input_length = tf.constant([input_vector_np.shape[0]])
+
+        ds_features = DSModel.signatures['serving_default'](
+            input=input_vector, input_length=input_length)['output'][::2,0,:].numpy()
+
         return ds_features
 
 if __name__ == '__main__':

@@ -100,7 +100,7 @@ class DINetInferenceOptions():
                                  type=str,
                                  help='pretrained model of DINet(clip trained)')
         self.parser.add_argument('--deepspeech_model_path',
-                                 default='./asserts/output_graph.pb',
+                                 default='./asserts/deepspeech_savedmodel',
                                  type=str,
                                  help='path of deepspeech model')
         self.parser.add_argument('--res_video_dir',
