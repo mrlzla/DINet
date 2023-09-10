@@ -28,6 +28,8 @@ class DataProcessingOptions():
         self.parser.add_argument('--clip_length', type=int, default=9, help='clip length')
         self.parser.add_argument('--deep_speech_model', type=str, default="./asserts/output_graph.pb",
                                  help='path of pretrained deepspeech model')
+        self.parser.add_argument('--dlib_landmark_5_model', type=str, default="./shape_predictor_5_face_landmarks.dat",
+                                 help='path of pretrained deepspeech model')
         return self.parser.parse_args()
 
 class DINetTrainingOptions():

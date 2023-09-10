@@ -29,16 +29,19 @@ def compute_crop_radius(video_size,landmark_data_clip,random_scale = None):
     judge if crop face and compute crop radius
     '''
     video_w, video_h = video_size[0], video_size[1]
+    #print(f"Argmax is {np.argmax(landmark_data_clip[..., 1], axis=1)}")
     landmark_max_clip = np.max(landmark_data_clip, axis=1)
     if random_scale is None:
         random_scale = random.random() / 10 + 1.05
     else:
         random_scale = random_scale
-    radius_h = (landmark_max_clip[:,1] - landmark_data_clip[:,29, 1]) * random_scale
-    radius_w = (landmark_data_clip[:,54, 0] - landmark_data_clip[:,48, 0]) * random_scale
-    radius_clip = np.max(np.stack([radius_h, radius_w],1),1) // 2
-    radius_max = np.max(radius_clip)
-    radius_max = (np.int(radius_max/4) + 1 ) * 4
+    radius_h = (landmark_data_clip[2, 8, 1] - landmark_data_clip[2 ,29, 1]) * random_scale
+    #radius_h = (landmark_max_clip[:,1] - landmark_data_clip[:,29, 1]) * random_scale
+    radius_w = (landmark_data_clip[2, 54, 0] - landmark_data_clip[2, 48, 0]) * random_scale
+    #radius_clip = np.max(np.stack([radius_h, radius_w],1),1) // 2
+    #radius_max = np.max(radius_clip)
+    radius_max = max(radius_h, radius_w) // 2
+    radius_max = (np.int32(radius_max/4) + 1 ) * 4
     radius_max_1_4 = radius_max//4
     clip_min_h = landmark_data_clip[:, 29,
                  1] - radius_max
@@ -54,7 +57,7 @@ def compute_crop_radius(video_size,landmark_data_clip,random_scale = None):
         return False,None
     elif max(clip_max_w.tolist()) > video_w:
         return False,None
-    elif max(radius_clip) > min(radius_clip) * 1.5:
-        return False, None
+    # elif max(radius_clip) > min(radius_clip) * 1.5:
+    #     return False, None
     else:
         return True,radius_max

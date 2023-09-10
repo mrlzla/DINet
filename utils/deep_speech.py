@@ -49,7 +49,7 @@ class DeepSpeech():
         train_inputs = (train_inputs - np.mean(train_inputs)) / \
                        np.std(train_inputs)
 
-        return train_inputs
+        return train_inputs.astype(np.float32)
 
     def compute_audio_feature(self,audio_path):
         audio_sample_rate, audio = wavfile.read(audio_path)
@@ -59,11 +59,11 @@ class DeepSpeech():
             audio = audio[:, 0]
         if audio_sample_rate != self.target_sample_rate:
             resampled_audio = resampy.resample(
-                x=audio.astype(np.float),
+                x=audio.astype(np.float32),
                 sr_orig=audio_sample_rate,
                 sr_new=self.target_sample_rate)
         else:
-            resampled_audio = audio.astype(np.float)
+            resampled_audio = audio.astype(np.float32)
 
         input_vector_np = self.conv_audio_to_deepspeech_input_vector(
             audio=resampled_audio.astype(np.int16),
@@ -74,7 +74,7 @@ class DeepSpeech():
         input_vector = tf.constant(input_vector_np)[None]
         input_length = tf.constant([input_vector_np.shape[0]])
 
-        ds_features = DSModel.signatures['serving_default'](
+        ds_features = self.model.signatures['serving_default'](
             input=input_vector, input_length=input_length)['output'][::2,0,:].numpy()
 
         return ds_features
