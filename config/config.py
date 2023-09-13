@@ -89,10 +89,6 @@ class DINetInferenceOptions():
                                  default='./asserts/examples/test4.mp4',
                                  type=str,
                                  help='path of source video')
-        self.parser.add_argument('--source_openface_landmark_path',
-                                 default='./asserts/examples/test4.csv',
-                                 type=str,
-                                 help='path of detected openface landmark')
         self.parser.add_argument('--driving_audio_path',
                                  default='./asserts/examples/driving_audio_1.wav',
                                  type=str,
