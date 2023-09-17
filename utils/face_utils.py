@@ -1,6 +1,8 @@
 import cv2
 import torch
 import numpy as np
+from torchvision.transforms.functional import normalize
+from detection.matlab_cp2tform import get_similarity_transform_for_cv2
 
 def get_smoothened_landmarks(landmarks, T=2):
     for i in range(len(landmarks)):
@@ -122,10 +124,7 @@ def align_warp_face(img, landmarks, face_size, reference_points, border_mode='co
     affine_matrices = []
     inv_affine_matrices = []
     for idx, landmark in enumerate(landmarks):
-        # use 5 landmarks to get affine matrix
-        # use cv2.LMEDS method for the equivalence to skimage transform
-        # ref: https://blog.csdn.net/yichxi/article/details/115827338
-        affine_matrix = cv2.estimateAffinePartial2D(landmark, reference_points, method=cv2.LMEDS)[0]
+        affine_matrix = get_similarity_transform_for_cv2(landmark.copy(), reference_points.copy())
         affine_matrices.append(affine_matrix)
         # warp and crop faces
         if border_mode == 'constant':
@@ -147,3 +146,28 @@ def align_warp_face(img, landmarks, face_size, reference_points, border_mode='co
 def get_inverse_affine(affine_matrix):
     """Get inverse affine matrix."""
     return cv2.invertAffineTransform(affine_matrix)
+
+def get_parsed_mask(face, parser, device='cuda'):
+    # inference
+    face_input = torch.from_numpy((face.astype('float32') / 255).transpose(2, 0, 1))
+    normalize(face_input, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)
+    face_input = torch.unsqueeze(face_input, 0).to(device)
+    with torch.no_grad():
+        out = parser(face_input)[0]
+    out = out.argmax(dim=1).squeeze().cpu().numpy()
+
+    parse_mask = np.zeros(out.shape)
+    MASK_COLORMAP = [0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 0, 0, 0]
+    for idx, color in enumerate(MASK_COLORMAP):
+        parse_mask[out == idx] = color
+    #  blur the mask
+    parse_mask = cv2.GaussianBlur(parse_mask, (101, 101), 11)
+    parse_mask = cv2.GaussianBlur(parse_mask, (101, 101), 11)
+    # remove the black borders
+    thres = 10
+    parse_mask[:thres, :] = 0
+    parse_mask[-thres:, :] = 0
+    parse_mask[:, :thres] = 0
+    parse_mask[:, -thres:] = 0
+
+    return parse_mask

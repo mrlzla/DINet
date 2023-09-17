@@ -105,4 +105,11 @@ class DINetInferenceOptions():
                                  default='./asserts/inference_result',
                                  type=str,
                                  help='path of generated videos')
+        self.parser.add_argument('--use_codeformer',
+                            action='store_true',
+                            help='whether to use codeformer or not')
+        self.parser.add_argument('--codeformer_w',
+                            default=0.5,
+                            type=float,
+                            help='Codeformer fidelity weights')
         return self.parser.parse_args()
