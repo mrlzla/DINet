@@ -133,6 +133,8 @@ def align_warp_face(img, landmarks, face_size, reference_points, border_mode='co
             border_mode = cv2.BORDER_REFLECT101
         elif border_mode == 'reflect':
             border_mode = cv2.BORDER_REFLECT
+        elif border_mode == 'replicate':
+            border_mode = cv2.BORDER_REPLICATE
 
         cropped_face = cv2.warpAffine(
             img, affine_matrix, face_size, borderMode=border_mode, borderValue=(135, 133, 132))  # gray

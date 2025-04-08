@@ -11,7 +11,7 @@ from .retinaface_net import FPN, SSH, MobileNetV1, make_bbox_head, make_class_he
 from .retinaface_utils import (PriorBox, batched_decode, batched_decode_landm, decode, decode_landm,
                                                  py_cpu_nms)
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
 
 def generate_config(network_name):
     
